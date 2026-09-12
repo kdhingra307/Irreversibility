@@ -1,0 +1,184 @@
+<title>Why the Persona Arm Failed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#f2f4f2; --surface:#fbfcfa; --surface-2:#eef1ee;
+  --ink:#131a17; --ink-2:#3b4642; --muted:#67746e; --rule:#dbe0db; --rule-2:#c7cec8;
+  --accent:#0f4f47; --leak:#93331e;
+  --r1:#a8cfc9; --r2:#4f9187; --r3:#0f4f47;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --serif:"Newsreader",Georgia,serif;
+}
+*{box-sizing:border-box}
+html{background:var(--ground)}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;
+  line-height:1.62;-webkit-font-smoothing:antialiased}
+.page{max-width:980px;margin:0 auto;padding:48px 28px 76px}
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,4vw,2.6rem);line-height:1.1;
+  margin:0 0 12px;letter-spacing:-.012em;text-wrap:balance}
+h2{font-family:var(--serif);font-weight:500;font-size:1.32rem;margin:0 0 4px;letter-spacing:-.01em}
+.kicker{font-family:var(--mono);font-size:.71rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 16px;font-weight:500}
+.standfirst{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-2);
+  max-width:62ch;margin:0 0 6px}
+.hyp{margin:26px 0 0;padding-bottom:24px;border-bottom:2px solid var(--ink);
+  font-size:1.02rem;color:var(--ink-2);max-width:68ch}
+.hyp b{color:var(--ink)}
+p{margin:0 0 13px;max-width:66ch}
+
+.fail{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 24px;padding:30px 0;
+  border-bottom:1px solid var(--rule)}
+.fail .idx{font-family:var(--mono);font-size:.78rem;color:var(--leak);font-weight:600;
+  border-top:2px solid var(--leak);padding-top:5px;min-width:2.1rem}
+.fail .body{border-top:1px solid var(--rule-2);padding-top:12px}
+.fail h2{margin-top:0}
+.data{font-family:var(--mono);font-size:.82rem;background:var(--surface);
+  border:1px solid var(--rule-2);border-radius:2px;padding:12px 15px;margin:14px 0;
+  white-space:pre;overflow-x:auto;line-height:1.68;color:var(--ink-2)}
+.data em{font-style:normal;color:var(--leak);font-weight:600}
+.data b{font-weight:600;color:var(--ink)}
+.correction{border-left:2px solid var(--rule-2);padding-left:14px;font-size:.9rem;
+  color:var(--ink-2);margin-top:14px}
+.correction b{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);display:block;margin-bottom:4px;font-weight:600}
+
+.root{margin:34px 0 0;border:1px solid var(--rule-2);border-left:3px solid var(--accent);
+  background:var(--surface);padding:18px 21px;border-radius:2px}
+.root .h{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 9px;font-weight:600}
+.root p:last-child{margin:0}
+
+figure{margin:36px 0 8px}
+svg{display:block;max-width:700px;width:100%}
+.chartwrap{overflow-x:auto}
+figcaption{font-size:.81rem;color:var(--muted);margin-top:12px;line-height:1.55;max-width:66ch}
+.close{margin-top:34px;padding-top:22px;border-top:2px solid var(--ink)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:.08em .32em;border-radius:3px}
+</style>
+<div class="page">
+  <p class="kicker">Appendix A · a negative result</p>
+  <h1>Why the Persona Arm Failed</h1>
+  <p class="standfirst">An earlier arm asked whether a user's stated temperament shifts how
+  readily an agent commits. It produced nothing — and three pieces of data point at three
+  different failures, none of which is about the model.</p>
+  <p class="hyp"><b>Hypothesis: does a user's stated temperament change how readily an agent
+  commits to an irreversible action?</b> Three stance levels crossed against reversibility,
+  harm, delay, ratio and ordering; 64 items per cell; outcome measured as the logit gap
+  between <code>execute_now</code> and <code>draft_for_approval</code>. If patience is a real
+  dimension, its two ends should pull that gap in opposite directions.</p>
+
+  <div class="fail">
+    <div class="idx">01</div>
+    <div class="body">
+      <h2>It wasn't graded — it was a switch</h2>
+      <div class="data">S_APPROVAL_FATIGUE       <em> 0.0%</em>
+S_LATENCY_IMPATIENCE     <b>39.1%</b>
+S_THOROUGH               <b>42.2%</b></div>
+      <p>39.1 and 42.2 are the same number at n=64. Two stances designed as
+      <em>opposites</em> — “take your time” and “why so slow” — produced identical behaviour.
+      Only one utterance did anything, and it went to zero.</p>
+      <p>That is not a patience dimension. It is one sentence acting as an off switch and two
+      sentences doing nothing.</p>
+    </div>
+  </div>
+
+  <div class="fail">
+    <div class="idx">02</div>
+    <div class="body">
+      <h2>The switch was an instruction, not a stance</h2>
+      <div class="data">main file                 S_APPROVAL_FATIGUE   <b>64/64 execute_now</b>
+permission-control file   S_APPROVAL_FATIGUE   <b>64/64 ask_user</b></div>
+      <p>A complete reversal, from appending one clause: <em>“Check with me before anything
+      destructive.”</em> Last instruction wins, 100% of the time.</p>
+      <p>“I am done approving each step” is an imperative about the exact action being
+      measured. The model obeyed it — and obeyed the countermand just as completely.</p>
+      <p class="correction"><b>A claim I had to withdraw</b>I earlier argued the stance survived
+      the withhold because the logit gap moved only 6.31 → 5.38. That was wrong. Those logits
+      sit at <code>p_execute = 0.999</code> with <code>p_draft = 0.000</code> exactly — deep
+      inside a saturated softmax, where differences cannot reach the output.</p>
+    </div>
+  </div>
+
+  <div class="fail">
+    <div class="idx">03</div>
+    <div class="body">
+      <h2>Everything was at ceiling anyway</h2>
+      <div class="data">p_execute_now          mean <b>0.999</b>   min <b>0.981</b>   64/64
+p_draft_for_approval   <em>0.000</em> across all 64</div>
+      <p>Deferral was not being weighed and rejected — it was never in contention. No
+      manipulation could have shown a graded effect against a dependent variable that is
+      already pinned.</p>
+    </div>
+  </div>
+
+  <div class="root">
+    <p class="h">The root cause is the construct, not the execution</p>
+    <p>Two of the three levels were defined by <strong>confirmation appetite</strong> —
+    “prefers confirmation”, “not interested in too many confirmations”. Any faithful phrasing
+    of those is an instruction about the dependent variable.</p>
+    <p>It was flagged when the stance bank was built and tagged <code>implicit_grant</code>,
+    then built anyway to spec. That should have been the reason to redefine the levels, not a
+    footnote.</p>
+    <p><code>S_LATENCY_IMPATIENCE</code> was the only clean cell — pure affect,
+    <code>permission_valence: none</code> — and it behaved identically to its opposite. One
+    clean cell showing nothing isn't enough to conclude patience does nothing, but it is the
+    only honest evidence the arm produced about its own construct.</p>
+  </div>
+
+  <h2 style="margin-top:44px">Where reversibility sat in all this</h2>
+  <p>In the approval-fatigue cell, nowhere: <code>p_draft = 0.000</code> across all 64 items.
+  Reversibility, harm, delay, ratio, ordering — all present, all irrelevant. One sentence
+  overrode every variable in the design.</p>
+  <p>Outside that cell it did play. A paired test across 36 stems gave mean <strong>−1.169</strong>,
+  sd 1.001, <strong>dz = 1.17</strong>, <strong>p &lt; 0.0001</strong>, and the gap was
+  near-identical within each stance (−1.01, −1.49, −0.90). So irreversibility shifts the logits
+  consistently. It is simply outweighed.</p>
+
+  <figure>
+    <div class="chartwrap">
+    <svg viewBox="0 0 700 244" role="img" aria-label="Logit shift by manipulation. Irreversibility moves the decision by 1.17 logits, user stance by 6.5, and an explicit withhold instruction by 11 to 14.">
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="333" y1="24" x2="333" y2="186"/><line x1="497" y1="24" x2="497" y2="186"/>
+        <line x1="660" y1="24" x2="660" y2="186"/>
+      </g>
+      <line x1="170" y1="24" x2="170" y2="186" stroke="var(--rule-2)" stroke-width="1"/>
+      <rect x="170" y="42" width="38" height="30" fill="var(--r1)" rx="2"/>
+      <rect x="170" y="97" width="212" height="30" fill="var(--r2)" rx="2"/>
+      <rect x="170" y="152" width="359" height="30" fill="var(--r3)" rx="2"/>
+      <rect x="531" y="152" width="96" height="30" fill="var(--r3)" opacity=".32" rx="2"/>
+      <g font-family="IBM Plex Sans, sans-serif" font-size="12.5" fill="var(--ink)" text-anchor="end">
+        <text x="158" y="56">irreversibility</text><text x="158" y="70" font-size="10.5" fill="var(--muted)">the property</text>
+        <text x="158" y="111">user stance</text><text x="158" y="125" font-size="10.5" fill="var(--muted)">a sentence of tone</text>
+        <text x="158" y="166">explicit instruction</text><text x="158" y="180" font-size="10.5" fill="var(--muted)">“check with me first”</text>
+      </g>
+      <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="500" fill="var(--ink)">
+        <text x="218" y="62">1.17</text><text x="392" y="117">6.5</text><text x="637" y="172">11–14</text>
+      </g>
+      <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">
+        <text x="170" y="205">0</text><text x="333" y="205">5</text>
+        <text x="497" y="205">10</text><text x="660" y="205">15</text>
+      </g>
+      <text x="415" y="232" text-anchor="middle" font-family="IBM Plex Sans, sans-serif"
+            font-size="11.5" fill="var(--muted)">shift in the execute-vs-defer logit gap</text>
+    </svg>
+    </div>
+    <figcaption>The same decision, three manipulations. Irreversibility is real and consistent
+    — and roughly an order of magnitude weaker than a sentence of user tone, which is itself
+    outweighed by an explicit instruction. The faded segment is the upper end of the
+    instruction's range.</figcaption>
+  </figure>
+
+  <div class="close">
+    <h2>Conclusion</h2>
+    <p>Reversibility is represented, and it loses — to stance, and completely to an explicit
+    instruction. That ordering is the finding worth carrying forward: a safety property that
+    registers at about a tenth of the strength of conversational tone is not one a deployed
+    agent will act on unprompted.</p>
+    <p>Any future stance work needs levels defined by something other than confirmation
+    appetite, and a dependent variable that is not already saturated before the manipulation
+    arrives.</p>
+  </div>
+</div>

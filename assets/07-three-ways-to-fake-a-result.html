@@ -1,0 +1,164 @@
+<title>Three Ways to Fake a Result</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#f2f4f2; --surface:#fbfcfa; --surface-2:#eef1ee;
+  --ink:#131a17; --ink-2:#3b4642; --muted:#67746e; --rule:#dbe0db; --rule-2:#c7cec8;
+  --accent:#0f4f47; --leak:#93331e; --fixed:#2c6a4d;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --serif:"Newsreader",Georgia,serif;
+}
+*{box-sizing:border-box}
+html{background:var(--ground)}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;
+  line-height:1.62;-webkit-font-smoothing:antialiased}
+.page{max-width:1000px;margin:0 auto;padding:48px 28px 76px}
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,4vw,2.6rem);line-height:1.1;
+  margin:0 0 12px;letter-spacing:-.012em;text-wrap:balance}
+.kicker{font-family:var(--mono);font-size:.71rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 16px;font-weight:500}
+.standfirst{font-family:var(--serif);font-size:1.2rem;line-height:1.5;color:var(--ink-2);
+  max-width:62ch;margin:0 0 6px}
+.hyp{margin:26px 0 0;padding-bottom:24px;border-bottom:2px solid var(--ink);
+  font-size:1.02rem;color:var(--ink-2);max-width:66ch}
+.hyp b{color:var(--ink)}
+
+.ctrl{display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:0 30px;
+  padding:30px 0;border-bottom:1px solid var(--rule)}
+.ctrl:last-of-type{border-bottom:none}
+.name{font-family:var(--sans);font-size:1.12rem;font-weight:600;margin:0 0 3px;letter-spacing:-.005em}
+.what{font-family:var(--mono);font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 12px;font-weight:500}
+.ctrl p{margin:0 0 12px;font-size:.94rem}
+.ctrl p:last-child{margin:0}
+.ctrl .fix{border-left:2px solid var(--rule-2);padding-left:14px;font-size:.9rem;color:var(--ink-2)}
+.ctrl .fix b{font-family:var(--mono);font-size:.69rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--accent);display:block;margin-bottom:4px;font-weight:600}
+
+.score{background:var(--surface);border:1px solid var(--rule-2);border-radius:3px;
+  padding:15px 17px;align-self:start}
+.score .lbl{font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 10px;font-weight:500}
+.pair{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.pair .v{font-family:var(--mono);font-size:1.32rem;font-weight:500;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+.pair .t{font-size:.79rem;color:var(--muted);line-height:1.35}
+.v.leak{color:var(--leak)} .v.fixed{color:var(--fixed)}
+.arrow{font-family:var(--mono);color:var(--rule-2);font-size:1.1rem;margin:2px 0 2px 4px}
+.score .foot{font-size:.78rem;color:var(--muted);margin-top:11px;padding-top:10px;
+  border-top:1px solid var(--rule);line-height:1.45}
+
+.close{margin-top:40px;border:1px solid var(--rule-2);border-left:3px solid var(--accent);
+  background:var(--surface);padding:18px 21px;border-radius:2px}
+.close .h{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 9px;font-weight:600}
+.close p{margin:0 0 11px}.close p:last-child{margin:0}
+.tw{overflow-x:auto;margin:14px 0 4px}
+table{border-collapse:collapse;width:100%;font-size:.84rem;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:6px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);font-weight:500}
+th:first-child,td:first-child{text-align:left}
+td.n{font-family:var(--mono)}
+tbody tr:last-child td{border-bottom:none}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:.08em .32em;border-radius:3px}
+@media(max-width:800px){.ctrl{grid-template-columns:1fr}.score{margin-top:16px}}
+</style>
+<div class="page">
+  <p class="kicker">Appendix B · stimulus controls</p>
+  <h1>Three Ways to Fake a Result</h1>
+  <p class="standfirst">Each of these produced a confident false positive in this project
+  before it was caught. All three now run on every build, before the GPU does.</p>
+  <p class="hyp"><b>Hypothesis: could a positive probe result arise with no representation
+  present at all?</b> Yes — three ways. None of these is a statistical test; each is a
+  property the stimulus set must have before any downstream number means anything.</p>
+
+  <div class="ctrl">
+    <div>
+      <p class="what">Control 1</p>
+      <p class="name">Tool count and schema length</p>
+      <p>Carrying reversibility by the <em>presence</em> of a recovery tool makes the two arms
+      differ by a whole tool schema — 50 to 70 tokens. The token-length distributions had
+      <strong>zero overlap</strong>, so length alone predicted the label perfectly, and the
+      probe read 1.000 at layer 1: two matmuls in, reading the final token's position in the
+      sequence.</p>
+      <p class="fix"><b>The fix</b>Swap the recovery tool for a length-matched read-only decoy,
+      so tool <em>count</em> is constant and only the fourth tool's semantics moves. Then match
+      per pair, not in aggregate — two arms can overlap in aggregate while every individual
+      pair still differs.</p>
+    </div>
+    <div class="score">
+      <p class="lbl">Token length → label</p>
+      <div class="pair"><span class="v leak">1.000</span><span class="t">length alone,<br>before the fix</span></div>
+      <div class="arrow">↓</div>
+      <div class="pair"><span class="v fixed">0.5000</span><span class="t">after per-pair<br>matching</span></div>
+      <p class="foot">The probe itself also fell from 1.000 at layer 1 to chance at layer 1.</p>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <div>
+      <p class="what">Control 2</p>
+      <p class="name">Layer-1 gain, not peak AUC</p>
+      <p>A probe going 0.95 → 0.99 found something already in the tokens. One going 0.50 → 0.90
+      found something the network computed. Reporting the peak alone cannot tell those apart,
+      and the difference is the entire claim.</p>
+      <p>Applied to the earlier work it was decisive. A 0.946 headline starts at
+      <strong>0.857 at layer 1</strong> and takes its largest step at layer 5 — 14% depth. On
+      the honest contrast, restricted to tasks that actually commit, the probe reads 0.700 at
+      layer 1 against 0.685 at its best layer: <strong>negative gain</strong>.</p>
+      <p class="fix"><b>The fix</b>Every score in this report carries its own layer-1 value and
+      the gain between them. Select layers by gain, never by peak.</p>
+    </div>
+    <div class="score">
+      <p class="lbl">The 0.946 headline, unpacked</p>
+      <div class="pair"><span class="v leak">0.857</span><span class="t">already present<br>at layer 1</span></div>
+      <div class="arrow">↓</div>
+      <div class="pair"><span class="v" style="color:var(--ink-2)">0.946</span><span class="t">peak — a gain<br>of just +0.089</span></div>
+      <p class="foot">On tasks that all commit: 0.700 at layer 1, 0.685 at peak. The result evaporates.</p>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <div>
+      <p class="what">Control 3</p>
+      <p class="name">Bag-of-words on the raw prompt</p>
+      <p>The cheapest check and the one that caught the most. TF-IDF on the prompt text, grouped
+      cross-validation, same folds as the probe. If plain word counts predict the label, nothing
+      measured in the residual stream can be attributed to the network.</p>
+      <p>A duplicated-text build scored <strong>0.992</strong> on bag-of-words alone. In the
+      current design the declarative arm scores near 1.0 <em>by construction</em> — its cue is a
+      phrase — while the structural arm must sit near chance. That the split holds is what makes
+      everything downstream interpretable.</p>
+      <p class="fix"><b>The fix</b>Run it as a gate, not a diagnostic. A build where the
+      structural arm reads above chance does not get probed.</p>
+    </div>
+    <div class="score">
+      <p class="lbl">Bag-of-words → label</p>
+      <div class="pair"><span class="v leak">0.992</span><span class="t">duplicated-text<br>build</span></div>
+      <div class="arrow">↓</div>
+      <div class="pair"><span class="v fixed">0.500</span><span class="t">structural arm,<br>current design</span></div>
+      <p class="foot">Declarative sits at 1.000 by design — that arm's cue <em>is</em> a phrase.</p>
+    </div>
+  </div>
+
+  <div class="close">
+    <p class="h">Necessary, and nowhere near sufficient</p>
+    <p>Passing all three does not make a dataset usable. Two of the three corpora abandoned
+    earlier in this project failed <em>despite</em> clean lexical controls:</p>
+    <div class="tw"><table>
+      <thead><tr><th>Dataset</th><th>Bag-of-words</th><th>Probe result</th><th>Why it actually failed</th></tr></thead>
+      <tbody>
+        <tr><td>OpenAI challenge · structural</td><td class="n">0.500</td><td class="n">0.583</td><td style="text-align:left">label its own prompt didn't determine</td></tr>
+        <tr><td>AgentAbstain</td><td class="n">0.567</td><td class="n">+0.047 gain</td><td style="text-align:left">no reversible arm in the corpus</td></tr>
+      </tbody>
+    </table></div>
+    <p>So these controls rule out one family of false positive — the stimulus carrying the answer
+    on its surface. They say nothing about whether the label is decidable from the prompt, or
+    whether both arms of the contrast exist at all. Those failures need different checks, and
+    they cost more to find.</p>
+  </div>
+</div>

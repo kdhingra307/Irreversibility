@@ -1,0 +1,714 @@
+<title>Do Agents Know What They Can't Undo?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#f2f4f2; --surface:#fbfcfa; --surface-2:#eef1ee;
+  --ink:#131a17; --ink-2:#3b4642; --muted:#67746e; --rule:#dbe0db; --rule-2:#c7cec8;
+  --accent:#0f4f47; --accent-soft:#e2ecea;
+  --s1:#1a6ea8; --s2:#b4720c;
+  --bad:#93331e; --good:#2c6a4d;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;
+  --serif:"Newsreader",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0e1211; --surface:#151a18; --surface-2:#1b2220;
+  --ink:#e7ebe8; --ink-2:#bac4bf; --muted:#8b958f; --rule:#28302d; --rule-2:#39433f;
+  --accent:#58a89a; --accent-soft:#16241f;
+  --s1:#3d93cb; --s2:#bd840f;
+  --bad:#d9765c; --good:#6fbf94;
+}}
+:root[data-theme="dark"]{
+  --ground:#0e1211; --surface:#151a18; --surface-2:#1b2220;
+  --ink:#e7ebe8; --ink-2:#bac4bf; --muted:#8b958f; --rule:#28302d; --rule-2:#39433f;
+  --accent:#58a89a; --accent-soft:#16241f;
+  --s1:#3d93cb; --s2:#bd840f;
+  --bad:#d9765c; --good:#6fbf94;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.page{max-width:1000px;margin:0 auto;padding:0 28px 96px}
+.col{max-width:66ch}
+h1,h2,h3{text-wrap:balance;font-family:var(--serif);font-weight:500;letter-spacing:-.012em}
+h1{font-size:clamp(2.1rem,5vw,3.1rem);line-height:1.08;margin:0 0 14px}
+h2{font-size:clamp(1.5rem,3vw,1.95rem);line-height:1.18;margin:0 0 6px}
+h3{font-size:1.16rem;line-height:1.3;margin:34px 0 8px;font-weight:600}
+p{margin:0 0 15px}
+a{color:var(--accent)}
+strong{font-weight:600}
+em{font-style:italic}
+code,.num{font-family:var(--mono);font-size:.9em;font-variant-numeric:tabular-nums}
+code{background:var(--surface-2);padding:.1em .34em;border-radius:3px}
+
+header.mast{padding:56px 0 30px;border-bottom:2px solid var(--ink)}
+.kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 18px;font-weight:500}
+.standfirst{font-family:var(--serif);font-size:1.28rem;line-height:1.5;color:var(--ink-2);
+  max-width:56ch;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:0 30px;margin-top:26px;
+  font-family:var(--mono);font-size:.76rem;color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+section{padding-top:52px}
+.eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 10px;font-weight:500}
+.dek{color:var(--ink-2);font-size:1.02rem;margin:0 0 4px;max-width:62ch}
+
+.keyfind{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);
+  border-radius:2px;margin:26px 0 8px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.keyfind div{background:var(--surface);padding:15px 17px}
+.keyfind .n{font-family:var(--mono);font-size:1.5rem;color:var(--ink);display:block;
+  font-variant-numeric:tabular-nums;font-weight:500;letter-spacing:-.02em}
+.keyfind .l{font-size:.83rem;color:var(--muted);margin-top:3px;display:block;line-height:1.42}
+
+table{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto;margin:18px 0 6px;border-top:1px solid var(--ink);
+  border-bottom:1px solid var(--rule-2)}
+th,td{text-align:right;padding:7px 12px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-family:var(--mono);font-size:.71rem;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);font-weight:500;border-bottom:1px solid var(--rule-2)}
+th:first-child,td:first-child{text-align:left;font-family:var(--sans)}
+tbody tr:last-child td{border-bottom:none}
+td.n{font-family:var(--mono)}
+.hi{color:var(--ink);font-weight:600}
+.dim{color:var(--muted)}
+.neg{color:var(--bad);font-weight:600}
+.pos{color:var(--good);font-weight:600}
+caption{caption-side:bottom;text-align:left;font-size:.79rem;color:var(--muted);
+  padding:9px 0 0;line-height:1.5}
+
+.gen{display:grid;grid-template-columns:auto 1fr;gap:0 22px;margin:22px 0}
+.gen .idx{font-family:var(--mono);font-size:.78rem;color:var(--accent);padding-top:4px;
+  border-top:2px solid var(--accent);min-width:2.2rem;font-weight:600}
+.gen .body{border-top:1px solid var(--rule-2);padding-top:10px;padding-bottom:26px}
+.gen .body h3{margin-top:0}
+.gen .verdict{font-size:.87rem;color:var(--ink-2);border-left:2px solid var(--rule-2);
+  padding-left:13px;margin-top:12px}
+.gen .verdict b{font-family:var(--mono);font-size:.76rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--bad);display:block;margin-bottom:2px}
+
+.callout{background:var(--surface);border:1px solid var(--rule-2);border-left:3px solid var(--accent);
+  padding:16px 19px;margin:24px 0;border-radius:2px}
+.callout p:last-child{margin-bottom:0}
+.callout .h{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--accent);margin:0 0 7px;font-weight:600}
+
+figure{margin:28px 0 8px}
+figcaption{font-size:.79rem;color:var(--muted);margin-top:10px;line-height:1.5;max-width:66ch}
+.legend{display:flex;gap:20px;font-size:.8rem;color:var(--ink-2);margin-bottom:8px;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:7px}
+.sw{width:13px;height:3px;border-radius:2px;display:inline-block}
+
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:0 34px}
+ul{margin:0 0 15px;padding-left:1.1em}
+li{margin-bottom:7px}
+hr{border:none;border-top:1px solid var(--rule);margin:54px 0 0}
+.appendix{border-top:2px solid var(--ink);margin-top:64px}
+.quote{font-family:var(--mono);font-size:.82rem;background:var(--surface-2);
+  padding:12px 15px;border-radius:2px;overflow-x:auto;white-space:pre;line-height:1.62;
+  color:var(--ink-2);margin:16px 0}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--rule);
+  font-size:.8rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){a{transition:opacity .15s}}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+
+<div class="page">
+
+<header class="mast">
+  <p class="kicker">Mechanistic interpretability · agent safety</p>
+  <h1>Do Agents Know What They Can't Undo?</h1>
+  <p class="standfirst">A linear direction in Qwen3-4B tracks whether an impending tool
+  call can be reversed. It survives being asked a question, dies the moment the model
+  commits, and steering it changes what the model does.</p>
+  <div class="meta">
+    <span><b>Model</b> Qwen3-4B · 36 layers · 2560 hidden</span>
+    <span><b>Stimuli</b> 4,096 prompts · 16 domains</span>
+    <span><b>Probe point</b> final <code>\n</code> before generation</span>
+  </div>
+</header>
+
+<section>
+  <p class="eyebrow">Summary</p>
+  <h2>What the run establishes</h2>
+  <div class="keyfind">
+    <div><span class="n">0.700</span><span class="l">Stated&nbsp;→&nbsp;inferred transfer on domains held out of both fitting and layer selection. Layer&nbsp;1 baseline <span class="num">0.465</span>.</span></div>
+    <div><span class="n">0.49</span><span class="l">The reversibility direction reading <em>harm</em> — chance. It is specific to undoability.</span></div>
+    <div><span class="n">25%→45%</span><span class="l">Permission-seeking under steering at −0.2, fluency intact. A matched random vector: flat.</span></div>
+    <div><span class="n">0.959</span><span class="l">Transfer into a pure reasoning frame — against <span class="num">0.540</span> one token after the model commits.</span></div>
+  </div>
+  <div class="col">
+    <p>The headline is not the size of any single number. It is that the same direction
+    behaves consistently across four independent tests — cue transfer, behavioural
+    prediction, causal intervention, and frame transfer — while failing exactly where a
+    representation of <em>consequence</em> should fail and a representation of
+    <em>intent</em> should not.</p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Part I · Provenance</p>
+  <h2>Three datasets that could not answer the question</h2>
+  <p class="dek">Each failed differently, and each failure is the reason the next one
+  exists. The through-line: reversibility is not a property of a task, and no amount of
+  relabelling makes it one.</p>
+
+  <div class="gen">
+    <div class="idx">01</div>
+    <div class="body">
+      <h3>Harvested corpus — AgentAbstain</h3>
+      <p>The plan was to harvest reversible/irreversible pairs from 42 environments and
+      541 tool definitions. An AST pass over the whole tool surface found the corpus has
+      no reversible arm at all:</p>
+      <div class="tw"><table>
+        <tbody>
+          <tr><td>Tools whose name implies undo or recovery</td><td class="n hi">0</td></tr>
+          <tr><td>Tools with a soft-delete or dry-run parameter</td><td class="n">3</td></tr>
+          <tr><td>Tools with transaction or savepoint structure</td><td class="n hi">0</td></tr>
+          <tr><td>Commit tools with a same-environment inverse</td><td class="n hi">0 / 176</td></tr>
+        </tbody>
+      </table></div>
+      <p>Hand-labelling the 526 tasks instead produced a labelling that was really about
+      something else. Of 240 tasks marked reversible, <strong>233 have no critical action
+      at all</strong> — they are pure lookups. So <code>has_critical_action</code> predicts
+      the human label at <span class="num">0.948</span>, and the probe's headline
+      <span class="num">0.946</span> does not beat it.</p>
+      <p>On the only honest contrast — the 257 tasks that do commit, 26 of them reversible —
+      the probe reads <span class="num">0.700</span> at layer 1 against
+      <span class="num">0.685</span> at its best layer. Negative depth gain: it was reading
+      surface form.</p>
+      <div class="verdict"><b>Why it failed</b>Task-level labelling collapses into
+      “does this commit anything”. Three rounds of relabelling — two of them the user's —
+      failed identically.</div>
+    </div>
+  </div>
+
+  <div class="gen">
+    <div class="idx">02</div>
+    <div class="body">
+      <h3>First authored set — the length confound</h3>
+      <p>If the corpus has no reversible arm, both arms must be written. The first attempt
+      carried reversibility the obvious way: the reversible arm gets a recovery tool, the
+      irreversible arm does not.</p>
+      <p>That makes the two arms differ by one whole tool schema, 50–70 tokens. Token-length
+      distributions had <strong>zero overlap</strong>. Token length alone predicted the label
+      at <span class="num">1.000</span>, and the probe scored
+      <span class="num">1.000 at layer 1</span> — two matmuls in, reading the final token's
+      position in the sequence.</p>
+      <p>Holding tool <em>count</em> constant — swapping the recovery tool for a
+      length-matched read-only decoy — cut leakage to <span class="num">0.516</span>, and a
+      third pass of per-pair matching took it to exactly <span class="num">0.5000</span>.</p>
+      <div class="verdict"><b>Why it failed</b>The manipulation was carried by prompt
+      geometry rather than meaning. Distribution overlap is a weak test — two arms can
+      overlap in aggregate while every individual pair still differs.</div>
+    </div>
+  </div>
+
+  <div class="gen">
+    <div class="idx">03</div>
+    <div class="body">
+      <h3>SDK-derived scenarios with an execution oracle</h3>
+      <p>The third generation fixed labelling properly: reversibility decided by
+      <em>executing</em> a recovery under a published grammar rather than asserting it, and
+      crossed against an independent harm oracle. This is where the declarative/structural
+      contrast was introduced, and it is the design that survives.</p>
+      <p>What it did not fix was surface leakage, which kept reappearing in new forms —
+      a sum-of-ages arithmetic leak, a duplicated-text build that scored
+      <span class="num">0.992</span> on bag-of-words alone, five over-repetitive generated
+      templates. Hours of compute went to stimulus defects a review pass would have caught.</p>
+      <div class="verdict"><b>Why it failed</b>Generated stimuli need auditing before the
+      GPU runs, not after. Every run now writes the full stimulus set to a reviewable file
+      and the runner loads <em>that file only</em>.</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p class="h">The rule that came out of it</p>
+    <p>Reversibility is a property of <strong>(action, target object, world state)</strong>,
+    not of a task. The manipulation that works points the <em>same tool</em> at objects of
+    differing recoverability, holds the call, the arguments, the request and the entire tool
+    inventory byte-identical, and moves one thing. Anything else measures the tool name.</p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Part II · Design</p>
+  <h2>Declarative versus structural</h2>
+  <div class="col">
+    <p>The fourth set is authored from scratch: 4,096 prompts over 16 domains, exactly
+    balanced with 512 in every cell of harm&nbsp;×&nbsp;reversibility&nbsp;×&nbsp;evidence.
+    Harm is orthogonal to reversibility, every domain is 128/128 on reversibility inside
+    each evidence condition, and all 512 scenario families carry all four label
+    combinations — so neither domain, family nor harm can carry the label.</p>
+    <p>The <strong>evidence</strong> factor is the heart of it. It moves <em>where
+    recoverability is written</em> without moving the label:</p>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Condition</th><th>Target tool's description</th><th>Recovery probe returns</th><th>Detecting it needs</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Declarative</strong></td><td>states the consequence outright</td><td>nothing</td><td>phrase recognition</td></tr>
+      <tr><td><strong>Structural</strong></td><td>silent</td><td>state values to reason from</td><td>a model of how actions meet state</td></tr>
+    </tbody>
+  </table>
+  <caption>Verified directly on the built file: the tool description differs by label only
+  in the declarative arm, the probe result only in the structural arm, and the user message
+  in neither.</caption></div>
+  <div class="col">
+    <p>Fitting on declarative and testing on structural then asks a sharp question:
+    <em>is the stated form and the inferred form the same representation?</em> A probe that
+    only recognises the sentence cannot transfer. One that has built a model of
+    recoverability should.</p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Part III · Findings</p>
+  <h2>The model represents it, weakly</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Protocol</th><th style="text-transform:none">Layer 1 · transfer</th><th>Peak</th><th>Gain</th><th>Layers chosen</th></tr></thead>
+    <tbody>
+      <tr><td>Declarative, within-condition</td><td class="n">0.800</td><td class="n">1.000</td><td class="n dim">+0.200</td><td class="dim">saturates by 13</td></tr>
+      <tr><td>Declarative → structural, pooled</td><td class="n">0.503</td><td class="n">0.709</td><td class="n">+0.206</td><td class="dim">34</td></tr>
+      <tr><td>Held-out domains, honest selection</td><td class="n">0.503</td><td class="n hi">0.697</td><td class="n">+0.194</td><td class="dim">22, 22, 33, 34</td></tr>
+      <tr><td>Unseen in fit <em>and</em> selection (8/8)</td><td class="n">0.465</td><td class="n hi">0.700</td><td class="n hi">+0.235</td><td class="dim">22, 22, 23, 25, 33</td></tr>
+    </tbody>
+  </table>
+  <caption>Layer selected on structural rows from development domains only; reported on
+  structural rows from domains absent from both the fit and the selection.</caption></div>
+  <div class="col">
+    <p>Two things matter more than the <span class="num">0.700</span>.</p>
+    <p><strong>Declarative AUC cannot select a layer.</strong> It saturates by layer 13, so
+    its ranking sorts ties at the third decimal — and the layers it ranks highest, 13 to 18,
+    transfer at <span class="num">0.46–0.54</span>. Perfect probes that are pure phrase
+    detectors. Selecting on the training condition would have picked one.</p>
+    <p><strong>An earlier version of these prompts read 0.912.</strong> The only difference
+    was one sentence — the situational context line, which varies with harm and is
+    orthogonal to reversibility. Restoring it cost <span class="num">0.21</span> AUC and
+    destabilised the layer choice from a unanimous 24 to a scatter across 22–34.</p>
+  </div>
+  <div class="callout">
+    <p class="h">The most portable lesson here</p>
+    <p>A probe that reads <span class="num">0.91</span> on homogeneous prompts and
+    <span class="num">0.70</span> once an orthogonal factor varies was partly reading prompt
+    homogeneity. Roughly half of that loss is recoverable by holding harm constant — fitting
+    and testing inside one harm stratum gives <span class="num">0.808</span> benign and
+    <span class="num">0.775</span> harmful, <em>on half the training data</em>. The probe is
+    specific to undoability, but it is not harm-<em>invariant</em>.</p>
+  </div>
+
+  <h3>It is specific to undoability, and harm is not</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Layer</th><th>rev → rev</th><th>rev → harm</th><th>harm → harm</th><th>harm → rev</th><th>cos</th></tr></thead>
+    <tbody>
+      <tr><td>23</td><td class="n">0.669</td><td class="n pos">0.481</td><td class="n">0.806</td><td class="n neg">0.294</td><td class="n dim">+0.145</td></tr>
+      <tr><td>24</td><td class="n">0.594</td><td class="n pos">0.490</td><td class="n">0.733</td><td class="n neg">0.205</td><td class="n dim">+0.158</td></tr>
+      <tr><td>33</td><td class="n">0.701</td><td class="n pos">0.534</td><td class="n">0.731</td><td class="n neg">0.207</td><td class="n dim">+0.153</td></tr>
+      <tr><td>34</td><td class="n hi">0.709</td><td class="n pos">0.531</td><td class="n">0.746</td><td class="n neg">0.215</td><td class="n dim">+0.157</td></tr>
+    </tbody>
+  </table>
+  <caption>Fit on declarative, scored on structural. 0.5 reads nothing; below 0.5 reads the
+  other label inversely.</caption></div>
+  <div class="col">
+    <p>The reversibility direction reads harm at chance at every layer, including where it
+    reads reversibility best. That closes the obvious objection: this is about undoability,
+    not about how alarming the action looks.</p>
+    <p>The reverse does not hold. <strong>The harm direction reads reversibility
+    <em>inversely</em></strong>, stably, at <span class="num">0.21–0.29</span>. The model's
+    harm representation treats irreversible actions as more harmful while its reversibility
+    representation ignores harm entirely — a sensible asymmetry, since “this can't be undone”
+    is a reason to think something harmful and not the other way round.</p>
+    <p>Harm itself is decodable but shallow: layer 1 already reads
+    <span class="num">0.857</span> declarative and <span class="num">0.911</span> structural,
+    gains of only <span class="num">+0.138</span> and <span class="num">+0.072</span>. It is
+    a stated sentence and the model reads it as one — the opposite profile to reversibility.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Behaviour follows, separably from harm</h2>
+  <p class="dek">Every prompt carries four tools — the target, a read-only recovery probe, a
+  restore tool, and <code>request_user_permission</code>, byte-identical everywhere so its
+  presence cannot leak the label. Greedy decoding, 4,096 rows, 512 per cell.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Condition</th><th>Irreversible</th><th>Reversible</th><th>Δ</th><th>Fisher p</th></tr></thead>
+    <tbody>
+      <tr><td>Declarative · benign</td><td class="n">18.2%</td><td class="n">7.4%</td><td class="n">+10.8</td><td class="n dim">3e−07</td></tr>
+      <tr><td>Declarative · harmful</td><td class="n">58.8%</td><td class="n">51.4%</td><td class="n">+7.4</td><td class="n dim">0.02</td></tr>
+      <tr><td>Structural · benign</td><td class="n">10.2%</td><td class="n">0.2%</td><td class="n">+10.0</td><td class="n dim">3e−15</td></tr>
+      <tr><td>Structural · harmful</td><td class="n">34.2%</td><td class="n">19.7%</td><td class="n">+14.5</td><td class="n dim">2e−07</td></tr>
+    </tbody>
+  </table>
+  <caption>Rate at which the model asks permission instead of acting. Irreversibility raises
+  it in all four cells, never reversing.</caption></div>
+  <div class="col">
+    <p>Harm is the larger driver — <span class="num">+19.5</span> to
+    <span class="num">+43.9</span> points, three to four times the size — and also significant
+    everywhere. The point is that <strong>both survive inside the other's levels</strong>.
+    Neither is a proxy for the other, which is exactly what the crossed design exists to
+    establish and what a nested design could not have shown.</p>
+    <p>Two artifacts belong beside these rates. <code>recovery_inspect</code> was called
+    <strong>zero times in 4,096 rows</strong> — including declarative rows where the probe
+    result had been removed and inspecting would have been informative. The model never
+    gathers evidence. And in the structural arm it called the <em>restore</em> tool on
+    28–42% of rows, restoring a target that has not yet been deleted. Both are most likely
+    consequences of these prompts carrying no system prompt, and both are reasons to read
+    the rates as a disposition rather than as a deployed agent's choice.</p>
+  </div>
+
+  <h3>The representation predicts behaviour the label cannot</h3>
+  <div class="col">
+    <p>Holding evidence, harm <em>and the ground-truth label</em> constant, does the probe's
+    continuous score still predict what the model did? Inside a cell every row shares a
+    ground truth, so anything here is the score adding something the label does not.</p>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Cell</th><th>Ask rate</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th style="text-transform:none">Spearman ρ</th></tr></thead>
+    <tbody>
+      <tr><td>Structural · benign · irreversible</td><td class="n">14.6%</td><td class="n dim">1.4</td><td class="n dim">1.4</td><td class="n dim">2.8</td><td class="n dim">4.2</td><td class="n hi">63.4</td><td class="n">0.53</td></tr>
+      <tr><td>Declarative · harmful · irreversible</td><td class="n">58.8%</td><td class="n dim">40.8</td><td class="n dim">38.2</td><td class="n dim">65.7</td><td class="n dim">62.7</td><td class="n hi">86.4</td><td class="n">0.34</td></tr>
+      <tr><td>Structural · harmful · irreversible</td><td class="n">50.9%</td><td class="n dim">36.2</td><td class="n dim">46.4</td><td class="n dim">36.8</td><td class="n dim">58.0</td><td class="n hi">76.8</td><td class="n">0.29</td></tr>
+      <tr><td>Declarative · benign · irreversible</td><td class="n">18.2%</td><td class="n dim">8.7</td><td class="n dim">13.7</td><td class="n dim">19.6</td><td class="n dim">31.4</td><td class="n dim">17.5</td><td class="n">0.13</td></tr>
+    </tbody>
+  </table>
+  <caption>Permission rate by probe-score quintile, binned within each cell. Irreversible
+  cells only — among reversible actions the score predicts nothing, and its range is
+  compressed near zero, so that null is partly range restriction rather than evidence.</caption></div>
+  <div class="col">
+    <p>The strongest cell reaches <span class="num">0.936</span> AUC on 52 permission requests
+    in 355 rows — about ten standard deviations above chance. And its <em>shape</em> answers a
+    question the AUC cannot: <strong>1.4, 1.4, 2.8, 4.2, 63.4</strong> is not a graded
+    response. It is flat and then a cliff — a threshold being crossed, with the probe score
+    measuring distance to the boundary. The harmful cells look more graded, so the model may
+    be doing both depending on how much is at stake.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Steering it changes what the model does</h2>
+  <div class="col">
+    <p>Gated first on reproducibility: <strong>split-half cosine 0.821</strong> at layer 24,
+    well clear of the 0.5 floor, so this is a stable direction rather than a per-split
+    artifact. Coefficients are multiples of the layer's own activation norm
+    (<span class="num">74.7</span>); the direction points toward <em>reversible</em>.</p>
+  </div>
+
+  <figure>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--s1)"></i> Reversibility direction</span>
+      <span><i class="sw" style="background:var(--s2)"></i> Matched random vector</span>
+      <span><i class="sw" style="background:var(--muted);height:0;border-top:2px dashed var(--muted)"></i> Unsteered baseline 25.0%</span>
+      <span style="color:var(--muted)">○ generation degraded (&lt;75% parseable)</span>
+    </div>
+    <div class="tw" style="border:none">
+    <svg viewBox="0 0 720 452" width="100%" style="max-width:720px;display:block" role="img"
+         aria-label="Permission-seeking rate against steering coefficient. The real direction sweeps from 45% at minus 0.2 down to 0% at plus 1.0; the random control stays flat at 25%.">
+      <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">
+        <text x="60" y="303" text-anchor="middle">−1.0</text>
+        <text x="215" y="303" text-anchor="middle">−0.5</text>
+        <text x="370" y="303" text-anchor="middle">0</text>
+        <text x="525" y="303" text-anchor="middle">+0.5</text>
+        <text x="680" y="303" text-anchor="middle">+1.0</text>
+        <text x="48" y="284" text-anchor="end">0</text>
+        <text x="48" y="234" text-anchor="end">10</text>
+        <text x="48" y="184" text-anchor="end">20</text>
+        <text x="48" y="134" text-anchor="end">30</text>
+        <text x="48" y="84" text-anchor="end">40</text>
+        <text x="48" y="34" text-anchor="end">50</text>
+      </g>
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="60" y1="230" x2="690" y2="230"/><line x1="60" y1="180" x2="690" y2="180"/>
+        <line x1="60" y1="130" x2="690" y2="130"/><line x1="60" y1="80" x2="690" y2="80"/>
+        <line x1="60" y1="30" x2="690" y2="30"/>
+      </g>
+      <line x1="60" y1="280" x2="690" y2="280" stroke="var(--rule-2)" stroke-width="1"/>
+      <line x1="60" y1="155" x2="690" y2="155" stroke="var(--muted)" stroke-width="1.5"
+            stroke-dasharray="5 4" opacity=".65"/>
+      <text x="686" y="150" text-anchor="end" font-family="IBM Plex Mono, monospace"
+            font-size="10.5" fill="var(--muted)">unsteered 25.0%</text>
+
+      <polyline fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"
+        points="60,245 215,157.5 308,155 339,152.5 370,155 401,155 432,155 525,177.5 680,277.5"/>
+      <polyline fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"
+        points="60,277.5 215,132.5 308,55 339,97.5 370,155 401,185 432,190 525,212.5 680,280"/>
+
+      <g fill="var(--s2)" stroke="var(--surface)" stroke-width="2">
+        <circle cx="308" cy="155" r="4.5"/><circle cx="339" cy="152.5" r="4.5"/>
+        <circle cx="401" cy="155" r="4.5"/><circle cx="432" cy="155" r="4.5"/>
+        <circle cx="215" cy="157.5" r="4.5"/>
+      </g>
+      <g fill="var(--surface)" stroke="var(--s2)" stroke-width="2">
+        <circle cx="60" cy="245" r="4.5"/><circle cx="525" cy="177.5" r="4.5"/>
+        <circle cx="680" cy="277.5" r="4.5"/>
+      </g>
+      <g fill="var(--s1)" stroke="var(--surface)" stroke-width="2">
+        <circle cx="308" cy="55" r="5"/><circle cx="339" cy="97.5" r="5"/>
+        <circle cx="370" cy="155" r="5"/><circle cx="401" cy="185" r="5"/>
+        <circle cx="432" cy="190" r="5"/><circle cx="525" cy="212.5" r="5"/>
+        <circle cx="680" cy="280" r="5"/>
+      </g>
+      <g fill="var(--surface)" stroke="var(--s1)" stroke-width="2">
+        <circle cx="60" cy="277.5" r="5"/><circle cx="215" cy="132.5" r="5"/>
+      </g>
+
+      <g font-family="IBM Plex Mono, monospace" font-size="11.5" font-weight="500">
+        <text x="308" y="42" text-anchor="middle" fill="var(--s1)">45.0%</text>
+        <text x="672" y="272" text-anchor="end" fill="var(--s1)">0.0%</text>
+      </g>
+      <g stroke="var(--rule)" stroke-width="1">
+        <line x1="60" y1="352" x2="690" y2="352"/><line x1="60" y1="422" x2="690" y2="422"/>
+      </g>
+      <line x1="60" y1="364.25" x2="690" y2="364.25" stroke="var(--muted)" stroke-width="1"
+            stroke-dasharray="4 4" opacity=".6"/>
+      <text x="56" y="356" text-anchor="end" font-family="IBM Plex Mono, monospace"
+            font-size="9.5" fill="var(--muted)">100</text>
+      <text x="56" y="425" text-anchor="end" font-family="IBM Plex Mono, monospace"
+            font-size="9.5" fill="var(--muted)">0</text>
+      <text x="60" y="346" font-family="IBM Plex Mono, monospace" font-size="10"
+            fill="var(--muted)">parseable output (%) — the fluency check</text>
+      <polyline fill="none" stroke="var(--s2)" stroke-width="1.75" stroke-linejoin="round"
+        points="60,379.7 215,358.3 308,362.5 339,363.6 370,364.3 401,365 432,366 525,370.2 680,411.9"/>
+      <polyline fill="none" stroke="var(--s1)" stroke-width="1.75" stroke-linejoin="round"
+        points="60,421.3 215,379.7 308,361.5 339,361.5 370,364.3 401,364.3 432,362.2 525,359.7 680,355.9"/>
+      <g fill="var(--s1)" stroke="var(--surface)" stroke-width="1.5">
+        <circle cx="680" cy="355.9" r="3.6"/></g>
+      <g fill="var(--s2)" stroke="var(--surface)" stroke-width="1.5">
+        <circle cx="680" cy="411.9" r="3.6"/></g>
+      <text x="672" y="349" text-anchor="end" font-family="IBM Plex Mono, monospace"
+            font-size="10.5" font-weight="500" fill="var(--s1)">94.5%</text>
+      <text x="672" y="424" text-anchor="end" font-family="IBM Plex Mono, monospace"
+            font-size="10.5" font-weight="500" fill="var(--s2)">14.5%</text>
+      <text x="370" y="444" text-anchor="middle" font-family="IBM Plex Sans, sans-serif"
+            font-size="11.5" fill="var(--muted)">steering coefficient (multiples of the layer's activation norm)</text>
+      <text x="14" y="160" text-anchor="middle" font-family="IBM Plex Sans, sans-serif"
+            font-size="11.5" fill="var(--muted)" transform="rotate(-90 14 155)">asked permission (%)</text>
+    </svg>
+    </div>
+    <figcaption>Top: permission-seeking against steering coefficient. Bottom: the share of
+    generations that produced a parseable tool call, on the same x-scale — the fluency check
+    that says whether a behavioural change is real or a broken model. A monotone,
+    bidirectional dose-response, with fluency <em>rising</em> across the positive range. The random control is flat at baseline and only moves where its parse rate
+    collapses — the direction any damage pushes, since acting is the modal output.</figcaption>
+  </figure>
+
+  <div class="col">
+    <p><strong>Each side rules out a different objection.</strong></p>
+    <p>Going <em>negative</em> answers “could this just be damage?”. Degradation biases a
+    model toward its most probable output, which here is acting, and it has no mechanism to
+    make a <em>less</em> probable behaviour more common. So the rise to
+    <span class="num">45.0%</span> at −0.2, with 86.5% of generations still parsing, cannot
+    be damage. The random vector at that coefficient sits at <span class="num">25.0%</span> —
+    the baseline, to one decimal.</p>
+    <p>Going <em>positive</em> answers it more directly still: <strong>the model gets
+    more fluent, not less.</strong> Asking falls 25.0 → 19.0 → 18.0 → 13.5 →
+    <span class="num">0.0%</span> while parseable output rises 82.5% → <span class="num">94.5%</span>,
+    above the unsteered rate. There is no degradation to attribute the effect to. And at
+    +1.0 the matched random vector — identical magnitude — collapses the model to
+    <span class="num">14.5%</span> parseable. Same size of push, 80 points of fluency apart.</p>
+    <p>The generations agree qualitatively. Under the real direction the model
+    <em>declines in prose</em>:</p>
+    <div class="quote">real −0.5  <span style="color:var(--s1)">&lt;error&gt; The action cannot be performed because the
+           recovery scope indicates that the restoration of the target
+           is outside the available tools and authority.</span>
+
+random −1.0  <span style="color:var(--s2)">The action has been successfully executed. The support
+           escalation definition has been removed from the active system…</span></div>
+    <p>The random vector confabulates an action never taken. One is caution, the other is
+    damage.</p>
+    <p class="dim" style="font-size:.9rem"><strong>A measurement note, in the conservative
+    direction.</strong> The action classifier counts only calls wrapped in
+    <code>&lt;tool_call&gt;</code>, so it scores those coherent refusals as “no call” and
+    <em>undercounts</em> caution at negative coefficients. Both biases understate the effect.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What the direction is about</h2>
+  <p class="dek">The same 128 scenarios, presented four ways from one prompt family. A
+  direction found in one row, tested in each column.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Fit on ↓ &nbsp; Tested on →</th><th>Pre-decision</th><th>Post first call</th><th>Last content</th><th>Question frame</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Pre-decision</strong></td><td class="n dim">0.991</td><td class="n neg">0.540</td><td class="n neg">0.565</td><td class="n hi">0.959</td></tr>
+      <tr><td>Post first call</td><td class="n">0.648</td><td class="n dim">0.965</td><td class="n">0.612</td><td class="n">0.711</td></tr>
+      <tr><td>Last content</td><td class="n">0.747</td><td class="n">0.639</td><td class="n dim">0.969</td><td class="n">0.737</td></tr>
+      <tr><td>Question frame</td><td class="n hi">0.891</td><td class="n neg">0.528</td><td class="n neg">0.559</td><td class="n dim">1.000</td></tr>
+    </tbody>
+  </table>
+  <caption>The question frame is the identical scenario with the request replaced by
+  “what are the consequences of the action described below?” — nothing to do, only something
+  to describe. Diagonals are fits on their own frame and carry no information.</caption></div>
+  <div class="col">
+    <p>Two blocks. Pre-decision and the question frame transfer mutually at
+    <span class="num">0.891–0.959</span>, cosine <span class="num">0.247</span>. Everything
+    touching a post-commitment anchor sits at <span class="num">0.528–0.747</span>, cosines
+    <span class="num">0.051–0.088</span>. A 0.42 gap inside a single row, on the same rows
+    and the same prompts.</p>
+    <p>So changing the <em>task</em> costs almost nothing; letting the model <em>commit</em>
+    destroys the direction. <strong>A feature encoding “I am poised to act” should vanish
+    where nothing is being done.</strong> This one transfers at 0.959 — which is the evidence
+    that it refers to the action's consequences rather than to the model's own imminent
+    behaviour.</p>
+    <p>The information does not leave at commitment; it relocates. A probe fit fresh at the
+    post-call anchor recovers structural reversibility at <span class="num">0.968</span>, and
+    still <span class="num">0.974</span> with the emitted action held constant. But layer 1
+    there already reads <span class="num">0.786</span>, so much of that is context being
+    re-read. The honest summary is the layer-1 margin, which <em>grows</em> across the turn:</p>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Structural rows</th><th style="text-transform:none">Layer 1 · within-condition</th><th>Layer 24</th><th>Margin</th></tr></thead>
+    <tbody>
+      <tr><td>Pre-decision</td><td class="n">0.976</td><td class="n">0.998</td><td class="n dim">+0.02</td></tr>
+      <tr><td>Post first call</td><td class="n">0.786</td><td class="n">0.968</td><td class="n">+0.18</td></tr>
+      <tr><td>Last content token</td><td class="n">0.706</td><td class="n">0.967</td><td class="n hi">+0.26</td></tr>
+    </tbody>
+  </table>
+  <caption>These are <em>within-condition</em> probes — fit and tested on structural rows —
+  so they are not comparable to the 0.503 transfer baseline above, which fits on declarative.
+  Structural reversibility is readable at layer 1 almost immediately; what depth adds is a
+  direction <em>shared with the declarative condition</em>. At the decision point the property
+  is almost entirely surface-available and depth buys nothing. After commitment, surface
+  availability decays while the deep representation holds — depth matters more after the model
+  acts, not less.</caption></div>
+</section>
+
+<section>
+  <h2>What it adds up to</h2>
+  <div class="col">
+    <p>A linear direction at roughly two-thirds depth encodes whether an impending tool call
+    can be undone. It transfers from stated to inferred evidence across domains held out of
+    both fitting and layer selection; it reads harm at chance; it predicts, beyond the
+    ground-truth label, which irreversible actions the model stops to ask about; steering it
+    produces a monotone bidirectional change in permission-seeking that a matched random
+    vector does not reproduce; and it survives a change of task framing but not the model's
+    own commitment.</p>
+    <p>For a guard built on such a direction, the practical consequence is sharp:
+    <strong>it has to read before the model moves.</strong> One token after the tool call,
+    the same monitor is at <span class="num">0.54</span> — barely above a coin flip — while
+    the model still has the information internally, somewhere else.</p>
+  </div>
+
+  <h3>What it does not show</h3>
+  <div class="col two">
+    <div>
+      <ul>
+        <li>One model, one token position, one prompt family, greedy decoding.</li>
+        <li>The prompts carry no system prompt, and the resulting behaviour includes
+        incoherent sequencing — restore before delete, evidence never gathered.</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li>The probe is specific to undoability but <em>not harm-invariant</em>: pooling
+        harm levels costs 0.08–0.10 AUC.</li>
+        <li>“Reversible” throughout means what the environment contract says is recoverable —
+        a stipulation, not a fact about the world.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="appendix">
+  <p class="eyebrow">Appendix A</p>
+  <h2>Why the user-persona arm failed</h2>
+  <p class="dek">An earlier arm asked whether a user's stated temperament shifts how readily
+  an agent commits. It produced nothing, and three pieces of data point at three different
+  failures.</p>
+
+  <h3>1 · It wasn't graded — it was a switch</h3>
+  <div class="quote">S_APPROVAL_FATIGUE        0.0%
+S_LATENCY_IMPATIENCE     39.1%
+S_THOROUGH               42.2%</div>
+  <div class="col">
+    <p>39.1 and 42.2 are the same number at n=64. Two stances designed as opposites — “take
+    your time” and “why so slow” — produced identical behaviour. Only one utterance did
+    anything, and it went to zero. That is not a patience dimension; it is one sentence
+    acting as an off switch and two sentences doing nothing.</p>
+  </div>
+
+  <h3>2 · The switch was an instruction, not a stance</h3>
+  <div class="quote">main file:                S_APPROVAL_FATIGUE   64/64 execute_now
+permission-control file:  S_APPROVAL_FATIGUE   64/64 ask_user</div>
+  <div class="col">
+    <p>A complete reversal from appending “Check with me before anything destructive.” Last
+    instruction wins, 100% of the time. “I am done approving each step” is an imperative
+    about the exact action being measured, so the model obeyed it — and obeyed the
+    countermand just as completely.</p>
+    <p>An earlier claim that the stance <em>survived</em> the withhold, on the grounds that
+    the logit gap moved only 6.31 → 5.38, was wrong. Those logits sit at
+    <span class="num">p_execute = 0.999</span> with <span class="num">p_draft = 0.000</span>
+    exactly — deep inside a saturated softmax, where differences cannot reach the output.</p>
+  </div>
+
+  <h3>3 · Everything was at ceiling anyway</h3>
+  <div class="quote">p_execute_now         mean 0.999   min 0.981   64/64
+p_draft_for_approval  0.000 across all 64</div>
+  <div class="col">
+    <p>Deferral was not being weighed and rejected — it was not in contention. No
+    manipulation could have shown a graded effect there.</p>
+    <p><strong>The root cause is in the construct.</strong> Two of the three levels were
+    defined by confirmation appetite — “prefers confirmation”, “not interested in too many
+    confirmations”. Any faithful phrasing of those is an instruction about the dependent
+    variable. It was flagged when the stance bank was built and tagged
+    <code>implicit_grant</code>, then built anyway to spec. That should have been the reason
+    to redefine the levels, not a footnote.</p>
+    <p><code>S_LATENCY_IMPATIENCE</code> was the only clean cell — pure affect,
+    <code>permission_valence: none</code> — and it behaved identically to its opposite. One
+    clean cell showing nothing is not enough to conclude patience does nothing, but it is the
+    only honest evidence the arm produced about its own construct.</p>
+  </div>
+
+  <h3>Where reversibility sat in all this</h3>
+  <div class="col">
+    <p>In the approval-fatigue cell, nowhere at all: <span class="num">p_draft = 0.000</span>
+    across all 64 items. Reversibility, harm, delay, ratio, ordering — all present, all
+    irrelevant. One sentence overrode every variable in the design.</p>
+    <p>Outside that cell it did play. The paired test gave mean <span class="num">−1.169</span>,
+    sd <span class="num">1.001</span>, <span class="num">dz = 1.17</span>,
+    <span class="num">p &lt; 0.0001</span> across 36 stems, and the gap was near-identical
+    within each stance (−1.01, −1.49, −0.90). So irreversibility shifted the logits
+    consistently — while stance moved the intercept by <span class="num">6.5</span> logits and
+    the withhold clause by <span class="num">11–14</span>.</p>
+    <p>That is the shape of it: <strong>reversibility is represented, and it is roughly an
+    order of magnitude weaker than a sentence of user tone.</strong> It loses to stance, and
+    it loses completely to an explicit instruction. Any future stance work needs levels
+    defined by something other than confirmation appetite, and a dependent variable that is
+    not already saturated before the manipulation arrives.</p>
+  </div>
+</section>
+
+<section class="appendix">
+  <p class="eyebrow">Appendix B</p>
+  <h2>Surface confounds and the tool-length controls</h2>
+  <div class="col">
+    <p>Three controls run on every build, because each caught a real defect at least once.</p>
+    <p><strong>Tool count and schema length.</strong> Carrying reversibility by the presence
+    of a recovery tool makes the arms differ by a whole schema. Token length then predicted
+    the label at <span class="num">1.000</span> and the probe read
+    <span class="num">1.000 at layer 1</span>. The fix is a length-matched read-only decoy so
+    tool count is constant and only the fourth tool's semantics moves; per-pair matching then
+    took length leakage to exactly <span class="num">0.5000</span>. Aggregate distribution
+    overlap is <em>not</em> sufficient — two arms can overlap in aggregate while every
+    individual pair still differs.</p>
+    <p><strong>Layer-1 gain, not peak AUC.</strong> A probe going 0.95 → 0.99 found something
+    already in the tokens; one going 0.50 → 0.90 found something the network computed. Every
+    score in this report is reported against its own layer-1 value. Applied to the earlier
+    work it was decisive: a 0.946 headline that starts at 0.857 and does its biggest step at
+    layer 5 — 14% depth — is not a semantic result.</p>
+    <p><strong>Bag-of-words on the raw prompt text.</strong> The cheapest check and the one
+    that caught the most. A duplicated-text build scored <span class="num">0.992</span> on
+    bag-of-words alone; in the current design the declarative arm scores near 1.0 <em>by
+    construction</em> — its cue is a phrase — while the structural arm must sit near chance,
+    and the pattern holding is what makes anything downstream interpretable.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Qwen3-4B · 4,096 prompts · 16 domains · probes are L2 logistic regression (C=0.01) on
+  the residual stream, cross-validated with folds split on domain. Executable record:
+  <code>experiment.ipynb</code>.</p>
+</footer>
+
+</div>
